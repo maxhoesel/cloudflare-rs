@@ -137,7 +137,7 @@ pub struct Meta {
 
 /// A Zone is a domain name along with its subdomains and other identities
 /// https://api.cloudflare.com/#zone-properties
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 pub struct Zone {
     /// Zone identifier tag
     pub id: String,
