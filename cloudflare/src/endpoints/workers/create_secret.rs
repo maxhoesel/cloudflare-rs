@@ -1,9 +1,11 @@
 use super::WorkersSecret;
 
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
+
+use serde::Serialize;
 
 /// Create Secret
-/// https://api.cloudflare.com/#worker-create-secret
+/// <https://api.cloudflare.com/#worker-create-secret>
 #[derive(Debug)]
 pub struct CreateSecret<'a> {
     /// Account ID of script owner
@@ -14,9 +16,9 @@ pub struct CreateSecret<'a> {
     pub params: CreateSecretParams,
 }
 
-impl<'a> Endpoint<WorkersSecret, (), CreateSecretParams> for CreateSecret<'a> {
+impl<'a> EndpointSpec<WorkersSecret> for CreateSecret<'a> {
     fn method(&self) -> Method {
-        Method::Put
+        Method::PUT
     }
     fn path(&self) -> String {
         format!(
@@ -24,8 +26,10 @@ impl<'a> Endpoint<WorkersSecret, (), CreateSecretParams> for CreateSecret<'a> {
             self.account_identifier, self.script_name
         )
     }
-    fn body(&self) -> Option<CreateSecretParams> {
-        Some(self.params.clone())
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.params).unwrap();
+        Some(body)
     }
 }
 

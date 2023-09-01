@@ -1,7 +1,7 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
 
 /// Delete Tail
-/// https://api.cloudflare.com/#worker-delete-tail
+/// <https://api.cloudflare.com/#worker-delete-tail>
 #[derive(Debug)]
 pub struct DeleteTail<'a> {
     /// Account id of owner of the script
@@ -12,9 +12,9 @@ pub struct DeleteTail<'a> {
     pub tail_id: &'a str,
 }
 
-impl<'a> Endpoint<()> for DeleteTail<'a> {
+impl<'a> EndpointSpec<()> for DeleteTail<'a> {
     fn method(&self) -> Method {
-        Method::Delete
+        Method::DELETE
     }
     fn path(&self) -> String {
         format!(

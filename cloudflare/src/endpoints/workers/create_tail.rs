@@ -1,9 +1,11 @@
 use super::WorkersTail;
 
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
+
+use serde::Serialize;
 
 /// Create Tail
-/// https://api.cloudflare.com/#worker-create-tail
+/// <https://api.cloudflare.com/#worker-create-tail>
 #[derive(Debug)]
 pub struct CreateTail<'a> {
     /// Account ID of owner of the script
@@ -18,9 +20,9 @@ pub struct CreateTail<'a> {
     pub params: CreateTailParams,
 }
 
-impl<'a> Endpoint<WorkersTail, (), CreateTailParams> for CreateTail<'a> {
+impl<'a> EndpointSpec<WorkersTail> for CreateTail<'a> {
     fn method(&self) -> Method {
-        Method::Post
+        Method::POST
     }
     fn path(&self) -> String {
         format!(
@@ -28,9 +30,11 @@ impl<'a> Endpoint<WorkersTail, (), CreateTailParams> for CreateTail<'a> {
             self.account_identifier, self.script_name
         )
     }
-    fn body(&self) -> Option<CreateTailParams> {
+    #[inline]
+    fn body(&self) -> Option<String> {
         if self.params.url.is_some() {
-            Some(self.params.clone())
+            let body = serde_json::to_string(&self.params).unwrap();
+            Some(body)
         } else {
             None
         }

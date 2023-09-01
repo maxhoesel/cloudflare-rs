@@ -1,25 +1,28 @@
 use super::Account;
 
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{serialize_query, EndpointSpec, Method};
 use crate::framework::OrderDirection;
+
+use serde::Serialize;
 
 /// List Accounts
 /// List all accounts you have ownership or verified access to
-/// https://api.cloudflare.com/#accounts-list-accounts
+/// <https://api.cloudflare.com/#accounts-list-accounts>
 #[derive(Debug)]
 pub struct ListAccounts {
     pub params: Option<ListAccountsParams>,
 }
 
-impl Endpoint<Vec<Account>, ListAccountsParams> for ListAccounts {
+impl EndpointSpec<Vec<Account>> for ListAccounts {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         "accounts".to_string()
     }
-    fn query(&self) -> Option<ListAccountsParams> {
-        self.params.clone()
+    #[inline]
+    fn query(&self) -> Option<String> {
+        serialize_query(&self.params)
     }
 }
 

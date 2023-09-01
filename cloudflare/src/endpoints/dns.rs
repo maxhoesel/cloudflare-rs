@@ -1,49 +1,53 @@
 use crate::framework::{
-    endpoint::{Endpoint, Method},
+    endpoint::{serialize_query, EndpointSpec, Method},
     response::ApiResult,
 };
-/// https://api.cloudflare.com/#dns-records-for-a-zone-properties
+/// <https://api.cloudflare.com/#dns-records-for-a-zone-properties>
 use crate::framework::{OrderDirection, SearchMatch};
 use chrono::offset::Utc;
 use chrono::DateTime;
+use serde::{Deserialize, Serialize};
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 /// List DNS Records
-/// https://api.cloudflare.com/#dns-records-for-a-zone-list-dns-records
+/// <https://api.cloudflare.com/#dns-records-for-a-zone-list-dns-records>
 #[derive(Debug)]
 pub struct ListDnsRecords<'a> {
     pub zone_identifier: &'a str,
     pub params: ListDnsRecordsParams,
 }
-impl<'a> Endpoint<Vec<DnsRecord>, ListDnsRecordsParams> for ListDnsRecords<'a> {
+impl<'a> EndpointSpec<Vec<DnsRecord>> for ListDnsRecords<'a> {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         format!("zones/{}/dns_records", self.zone_identifier)
     }
-    fn query(&self) -> Option<ListDnsRecordsParams> {
-        Some(self.params.clone())
+    #[inline]
+    fn query(&self) -> Option<String> {
+        serialize_query(&self.params)
     }
 }
 
 /// Create DNS Record
-/// https://api.cloudflare.com/#dns-records-for-a-zone-create-dns-record
+/// <https://api.cloudflare.com/#dns-records-for-a-zone-create-dns-record>
 #[derive(Debug)]
 pub struct CreateDnsRecord<'a> {
     pub zone_identifier: &'a str,
     pub params: CreateDnsRecordParams<'a>,
 }
 
-impl<'a> Endpoint<DnsRecord, (), CreateDnsRecordParams<'a>> for CreateDnsRecord<'a> {
+impl<'a> EndpointSpec<DnsRecord> for CreateDnsRecord<'a> {
     fn method(&self) -> Method {
-        Method::Post
+        Method::POST
     }
     fn path(&self) -> String {
         format!("zones/{}/dns_records", self.zone_identifier)
     }
-    fn body(&self) -> Option<CreateDnsRecordParams<'a>> {
-        Some(self.params.clone())
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.params).unwrap();
+        Some(body)
     }
 }
 
@@ -65,15 +69,15 @@ pub struct CreateDnsRecordParams<'a> {
 }
 
 /// Delete DNS Record
-/// https://api.cloudflare.com/#dns-records-for-a-zone-delete-dns-record
+/// <https://api.cloudflare.com/#dns-records-for-a-zone-delete-dns-record>
 #[derive(Debug)]
 pub struct DeleteDnsRecord<'a> {
     pub zone_identifier: &'a str,
     pub identifier: &'a str,
 }
-impl<'a> Endpoint<DeleteDnsRecordResponse> for DeleteDnsRecord<'a> {
+impl<'a> EndpointSpec<DeleteDnsRecordResponse> for DeleteDnsRecord<'a> {
     fn method(&self) -> Method {
-        Method::Delete
+        Method::DELETE
     }
     fn path(&self) -> String {
         format!(
@@ -84,7 +88,7 @@ impl<'a> Endpoint<DeleteDnsRecordResponse> for DeleteDnsRecord<'a> {
 }
 
 /// Update DNS Record
-/// https://api.cloudflare.com/#dns-records-for-a-zone-update-dns-record
+/// <https://api.cloudflare.com/#dns-records-for-a-zone-update-dns-record>
 #[derive(Debug)]
 pub struct UpdateDnsRecord<'a> {
     pub zone_identifier: &'a str,
@@ -92,9 +96,9 @@ pub struct UpdateDnsRecord<'a> {
     pub params: UpdateDnsRecordParams<'a>,
 }
 
-impl<'a> Endpoint<DnsRecord, (), UpdateDnsRecordParams<'a>> for UpdateDnsRecord<'a> {
+impl<'a> EndpointSpec<DnsRecord> for UpdateDnsRecord<'a> {
     fn method(&self) -> Method {
-        Method::Put
+        Method::PUT
     }
     fn path(&self) -> String {
         format!(
@@ -102,8 +106,10 @@ impl<'a> Endpoint<DnsRecord, (), UpdateDnsRecordParams<'a>> for UpdateDnsRecord<
             self.zone_identifier, self.identifier
         )
     }
-    fn body(&self) -> Option<UpdateDnsRecordParams<'a>> {
-        Some(self.params.clone())
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.params).unwrap();
+        Some(body)
     }
 }
 

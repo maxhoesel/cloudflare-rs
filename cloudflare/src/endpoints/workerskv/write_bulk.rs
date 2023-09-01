@@ -1,9 +1,11 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
+
+use serde::{Deserialize, Serialize};
 
 /// Write Key-Value Pairs in Bulk
 /// Writes multiple key-value pairs to Workers KV at once.
 /// A 404 is returned if a write action is for a namespace ID the account doesn't have.
-/// https://api.cloudflare.com/#workers-kv-namespace-write-multiple-key-value-pairs
+/// <https://api.cloudflare.com/#workers-kv-namespace-write-multiple-key-value-pairs>
 #[derive(Debug)]
 pub struct WriteBulk<'a> {
     pub account_identifier: &'a str,
@@ -11,9 +13,9 @@ pub struct WriteBulk<'a> {
     pub bulk_key_value_pairs: Vec<KeyValuePair>,
 }
 
-impl<'a> Endpoint<(), (), Vec<KeyValuePair>> for WriteBulk<'a> {
+impl<'a> EndpointSpec<()> for WriteBulk<'a> {
     fn method(&self) -> Method {
-        Method::Put
+        Method::PUT
     }
     fn path(&self) -> String {
         format!(
@@ -21,8 +23,11 @@ impl<'a> Endpoint<(), (), Vec<KeyValuePair>> for WriteBulk<'a> {
             self.account_identifier, self.namespace_identifier
         )
     }
-    fn body(&self) -> Option<Vec<KeyValuePair>> {
-        Some(self.bulk_key_value_pairs.clone())
+
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.bulk_key_value_pairs).unwrap();
+        Some(body)
     }
     // default content-type is already application/json
 }

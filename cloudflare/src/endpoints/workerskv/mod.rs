@@ -2,7 +2,7 @@ use crate::framework::response::ApiResult;
 use chrono::DateTime;
 use chrono::{TimeZone, Utc};
 use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 pub mod create_namespace;
 pub mod delete_bulk;
@@ -40,7 +40,7 @@ const PATH_SEGMENT_ENCODE_SET: &AsciiSet = &CONTROLS
 
 /// Workers KV Namespace
 /// A Namespace is a collection of key-value pairs stored in Workers KV.
-/// https://api.cloudflare.com/#workers-kv-namespace-properties
+/// <https://api.cloudflare.com/#workers-kv-namespace-properties>
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct WorkersKvNamespace {
     /// Namespace identifier tag.

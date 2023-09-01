@@ -1,25 +1,29 @@
 use super::WorkersRouteIdOnly;
 
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
+
+use serde::Serialize;
 
 /// Create a Route
 /// Creates a route mapping the given pattern to the given script
-/// https://api.cloudflare.com/#worker-routes-create-route
+/// <https://api.cloudflare.com/#worker-routes-create-route>
 #[derive(Debug)]
 pub struct CreateRoute<'a> {
     pub zone_identifier: &'a str,
     pub params: CreateRouteParams,
 }
 
-impl<'a> Endpoint<WorkersRouteIdOnly, (), CreateRouteParams> for CreateRoute<'a> {
+impl<'a> EndpointSpec<WorkersRouteIdOnly> for CreateRoute<'a> {
     fn method(&self) -> Method {
-        Method::Post
+        Method::POST
     }
     fn path(&self) -> String {
         format!("zones/{}/workers/routes", self.zone_identifier)
     }
-    fn body(&self) -> Option<CreateRouteParams> {
-        Some(self.params.clone())
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.params).unwrap();
+        Some(body)
     }
 }
 

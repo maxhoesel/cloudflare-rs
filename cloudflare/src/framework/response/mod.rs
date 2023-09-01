@@ -1,8 +1,7 @@
-extern crate reqwest;
-extern crate serde_json;
 mod apifail;
 
 pub use apifail::*;
+use serde::Deserialize;
 use serde_json::value::Value as JsonValue;
 
 #[derive(Deserialize, Debug, Eq, PartialEq)]
@@ -18,7 +17,7 @@ pub struct ApiSuccess<ResultType> {
 pub type ApiResponse<ResultType> = Result<ApiSuccess<ResultType>, ApiFailure>;
 
 // There is no blocking implementation for wasm.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
 // If the response is 200 and parses, return Success.
 // If the response is 200 and doesn't parse, return Invalid.
 // If the response isn't 200, return Failure, with API errors if they were included.
@@ -42,7 +41,7 @@ pub fn map_api_response<ResultType: ApiResult>(
 /// Some endpoints return nothing. That's OK.
 impl ApiResult for () {}
 
-#[cfg(test)]
+#[cfg(all(test, feature = "blocking", not(target_arch = "wasm32")))]
 mod tests {
     use super::*;
     use std::collections::HashMap;

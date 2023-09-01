@@ -1,9 +1,9 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
 
 /// Delete a key-value pair from Workers KV
 /// Deletes a given key from the given namespace in Workers KV.
 /// Returns 404 if the given namespace id is not found for an account.
-/// https://api.cloudflare.com/#workers-kv-namespace-delete-key-value-pair
+/// <https://api.cloudflare.com/#workers-kv-namespace-delete-key-value-pair>
 #[derive(Debug)]
 pub struct DeleteKey<'a> {
     pub account_identifier: &'a str,
@@ -11,9 +11,9 @@ pub struct DeleteKey<'a> {
     pub key: &'a str,
 }
 
-impl<'a> Endpoint<(), (), ()> for DeleteKey<'a> {
+impl<'a> EndpointSpec<()> for DeleteKey<'a> {
     fn method(&self) -> Method {
-        Method::Delete
+        Method::DELETE
     }
     fn path(&self) -> String {
         format!(

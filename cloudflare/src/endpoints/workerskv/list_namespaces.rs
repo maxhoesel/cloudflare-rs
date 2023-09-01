@@ -1,25 +1,28 @@
 use super::WorkersKvNamespace;
 
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{serialize_query, EndpointSpec, Method};
+
+use serde::Serialize;
 
 /// List Namespaces
 /// Returns the namespaces owned by an account
-/// https://api.cloudflare.com/#workers-kv-namespace-list-namespaces
+/// <https://api.cloudflare.com/#workers-kv-namespace-list-namespaces>
 #[derive(Debug)]
 pub struct ListNamespaces<'a> {
     pub account_identifier: &'a str,
     pub params: ListNamespacesParams,
 }
 
-impl<'a> Endpoint<Vec<WorkersKvNamespace>, ListNamespacesParams> for ListNamespaces<'a> {
+impl<'a> EndpointSpec<Vec<WorkersKvNamespace>> for ListNamespaces<'a> {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         format!("accounts/{}/storage/kv/namespaces", self.account_identifier)
     }
-    fn query(&self) -> Option<ListNamespacesParams> {
-        Some(self.params.clone())
+    #[inline]
+    fn query(&self) -> Option<String> {
+        serialize_query(&self.params)
     }
 }
 

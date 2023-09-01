@@ -2,27 +2,11 @@ use crate::framework::{
     auth,
     auth::{AuthClient, Credentials},
     endpoint::Endpoint,
-    reqwest_adaptors::match_reqwest_method,
     response::{ApiErrors, ApiFailure, ApiSuccess},
     response::{ApiResponse, ApiResult},
     Environment, HttpApiClientConfig,
 };
-use async_trait::async_trait;
-use cfg_if::cfg_if;
-use serde::Serialize;
 use std::net::SocketAddr;
-
-#[async_trait]
-pub trait ApiClient {
-    async fn request<ResultType, QueryType, BodyType>(
-        &self,
-        endpoint: &(dyn Endpoint<ResultType, QueryType, BodyType> + Send + Sync),
-    ) -> ApiResponse<ResultType>
-    where
-        ResultType: ApiResult,
-        QueryType: Serialize,
-        BodyType: Serialize;
-}
 
 /// A Cloudflare API client that makes requests asynchronously.
 pub struct Client {
@@ -45,24 +29,23 @@ impl Client {
         credentials: auth::Credentials,
         config: HttpApiClientConfig,
         environment: Environment,
-    ) -> anyhow::Result<Client> {
+    ) -> Result<Client, crate::framework::Error> {
         let mut builder = reqwest::Client::builder().default_headers(config.default_headers);
 
-        cfg_if! {
-            if #[cfg(not(target_arch = "wasm32"))] {
-                // There is no resolve method in wasm.
-                if let Some(address) = config.resolve_ip {
-                    let url = url::Url::from(&environment);
-                    builder = builder.resolve(
-                        url.host_str()
-                            .expect("Environment url should have a hostname"),
-                        SocketAddr::new(address, 443),
-                    );
-                }
-
-                // There are no timeouts in wasm. The property is documented as no-op in wasm32.
-                builder = builder.timeout(config.http_timeout);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            // There is no resolve method in wasm.
+            if let Some(address) = config.resolve_ip {
+                let url = url::Url::from(&environment);
+                builder = builder.resolve(
+                    url.host_str()
+                        .expect("Environment url should have a hostname"),
+                    SocketAddr::new(address, 443),
+                );
             }
+
+            // There are no timeouts in wasm. The property is documented as no-op in wasm32.
+            builder = builder.timeout(config.http_timeout);
         }
 
         let http_client = builder.build()?;
@@ -74,50 +57,30 @@ impl Client {
         })
     }
 
-    pub async fn request_handle<ResultType, QueryType, BodyType>(
+    /// Issue an API request of the given type.
+    pub async fn request<ResultType>(
         &self,
-        endpoint: &(dyn Endpoint<ResultType, QueryType, BodyType> + Send + Sync),
+        endpoint: &(dyn Endpoint<ResultType>),
     ) -> ApiResponse<ResultType>
     where
         ResultType: ApiResult,
-        QueryType: Serialize,
-        BodyType: Serialize,
     {
         // Build the request
         let mut request = self
             .http_client
-            .request(
-                match_reqwest_method(endpoint.method()),
-                endpoint.url(&self.environment),
-            )
-            .query(&endpoint.query());
+            .request(endpoint.method(), endpoint.url(&self.environment));
 
         if let Some(body) = endpoint.body() {
-            request = request.body(serde_json::to_string(&body).unwrap());
-            request = request.header(reqwest::header::CONTENT_TYPE, endpoint.content_type());
+            request = request.body(body);
+            request = request.header(
+                reqwest::header::CONTENT_TYPE,
+                endpoint.content_type().as_ref(),
+            );
         }
 
         request = request.auth(&self.credentials);
         let response = request.send().await?;
         map_api_response(response).await
-    }
-}
-
-// The async_trait does not work nicely in wasm. The mapping of Rust Futures to wasm bindgen
-// Promises does not seem to work when the async_trait macro is used: it causes compilation failures.
-#[cfg(not(target_arch = "wasm32"))]
-#[async_trait]
-impl ApiClient for Client {
-    async fn request<ResultType, QueryType, BodyType>(
-        &self,
-        endpoint: &(dyn Endpoint<ResultType, QueryType, BodyType> + Send + Sync),
-    ) -> ApiResponse<ResultType>
-    where
-        ResultType: ApiResult,
-        QueryType: Serialize,
-        BodyType: Serialize,
-    {
-        self.request_handle(endpoint).await
     }
 }
 

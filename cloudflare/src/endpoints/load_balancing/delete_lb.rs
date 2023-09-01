@@ -1,8 +1,10 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
 use crate::framework::response::ApiResult;
 
+use serde::Deserialize;
+
 /// Delete Load Balancer
-/// https://api.cloudflare.com/#load-balancers-delete-load-balancer
+/// <https://api.cloudflare.com/#load-balancers-delete-load-balancer>
 #[derive(Debug)]
 pub struct DeleteLoadBalancer<'a> {
     /// The Zone to which this Load Balancer belongs.
@@ -11,9 +13,9 @@ pub struct DeleteLoadBalancer<'a> {
     pub identifier: &'a str,
 }
 
-impl<'a> Endpoint<Response, (), ()> for DeleteLoadBalancer<'a> {
+impl<'a> EndpointSpec<Response> for DeleteLoadBalancer<'a> {
     fn method(&self) -> Method {
-        Method::Delete
+        Method::DELETE
     }
     fn path(&self) -> String {
         format!(

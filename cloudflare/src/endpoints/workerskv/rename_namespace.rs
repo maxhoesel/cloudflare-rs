@@ -1,8 +1,10 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
+
+use serde::Serialize;
 
 /// Rename a Namespace
 /// Modifies a namespace's title.
-/// https://api.cloudflare.com/#workers-kv-namespace-rename-a-namespace
+/// <https://api.cloudflare.com/#workers-kv-namespace-rename-a-namespace>
 #[derive(Debug)]
 pub struct RenameNamespace<'a> {
     pub account_identifier: &'a str,
@@ -10,9 +12,9 @@ pub struct RenameNamespace<'a> {
     pub params: RenameNamespaceParams,
 }
 
-impl<'a> Endpoint<(), (), RenameNamespaceParams> for RenameNamespace<'a> {
+impl<'a> EndpointSpec<()> for RenameNamespace<'a> {
     fn method(&self) -> Method {
-        Method::Put
+        Method::PUT
     }
     fn path(&self) -> String {
         format!(
@@ -20,8 +22,10 @@ impl<'a> Endpoint<(), (), RenameNamespaceParams> for RenameNamespace<'a> {
             self.account_identifier, self.namespace_identifier
         )
     }
-    fn body(&self) -> Option<RenameNamespaceParams> {
-        Some(self.params.clone())
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.params).unwrap();
+        Some(body)
     }
 }
 

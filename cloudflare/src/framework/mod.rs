@@ -1,21 +1,25 @@
 /*!
 This module controls how requests are sent to Cloudflare's API, and how responses are parsed from it.
  */
-pub mod apiclient;
 pub mod async_api;
 pub mod auth;
-#[cfg(not(target_arch = "wasm32"))] // There is no blocking implementation for wasm.
+// There is no blocking implementation for wasm.
+#[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
 pub mod blocking_api;
 pub mod endpoint;
-pub mod json_utils;
-#[cfg(not(target_arch = "wasm32"))] // The mock contains a blocking implementation.
-pub mod mock;
-mod reqwest_adaptors;
 pub mod response;
 
 use serde::Serialize;
 use std::net::IpAddr;
 use std::time::Duration;
+
+#[derive(thiserror::Error, Debug)]
+/// Errors encountered while trying to connect to the Cloudflare API
+pub enum Error {
+    /// An error via the `reqwest` crate
+    #[error("Reqwest returned an error when connecting to the Cloudflare API: {0}")]
+    ReqwestError(#[from] reqwest::Error),
+}
 
 #[derive(Serialize, Clone, Debug)]
 pub enum OrderDirection {
@@ -36,10 +40,16 @@ pub enum SearchMatch {
     Any,
 }
 
+/// Which environment (host path) to use for API calls
 #[derive(Debug)]
 pub enum Environment {
+    /// The production endpoint: `https://api.cloudflare.com/client/v4`
     Production,
+    /// A custom endpoint
     Custom(url::Url),
+    #[cfg(feature = "mockito")]
+    /// The local mock endpoint associated with `mockito`
+    Mockito,
 }
 
 impl<'a> From<&'a Environment> for url::Url {
@@ -49,17 +59,27 @@ impl<'a> From<&'a Environment> for url::Url {
                 url::Url::parse("https://api.cloudflare.com/client/v4/").unwrap()
             }
             Environment::Custom(url) => url.clone(),
+            #[cfg(feature = "mockito")]
+            Environment::Mockito => url::Url::parse(&mockito::server_url()).unwrap(),
         }
     }
 }
 
 // There is no blocking support for wasm.
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
 /// Synchronous Cloudflare API client.
 pub struct HttpApiClient {
     environment: Environment,
     credentials: auth::Credentials,
     http_client: reqwest::blocking::Client,
+}
+
+#[cfg(all(feature = "blocking", not(target_arch = "wasm32")))]
+impl HttpApiClient {
+    #[cfg(feature = "mockito")]
+    pub fn is_mock(&self) -> bool {
+        matches!(self.environment, Environment::Mockito)
+    }
 }
 
 /// Configuration for the API client. Allows users to customize its behaviour.

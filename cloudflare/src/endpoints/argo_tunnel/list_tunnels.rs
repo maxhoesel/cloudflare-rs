@@ -1,26 +1,28 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{serialize_query, EndpointSpec, Method};
 
 use super::Tunnel;
 
 /// List/search tunnels in an account.
-/// https://api.cloudflare.com/#argo-tunnel-list-argo-tunnels
+/// <https://api.cloudflare.com/#argo-tunnel-list-argo-tunnels>
 #[derive(Debug)]
 pub struct ListTunnels<'a> {
     pub account_identifier: &'a str,
     pub params: Params,
 }
 
-impl<'a> Endpoint<Vec<Tunnel>, Params> for ListTunnels<'a> {
+impl<'a> EndpointSpec<Vec<Tunnel>> for ListTunnels<'a> {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         format!("accounts/{}/tunnels", self.account_identifier)
     }
-    fn query(&self) -> Option<Params> {
-        Some(self.params.clone())
+    #[inline]
+    fn query(&self) -> Option<String> {
+        serialize_query(&self.params)
     }
 }
 

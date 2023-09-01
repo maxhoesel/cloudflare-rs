@@ -1,41 +1,44 @@
 use crate::endpoints::{account::AccountDetails, plan::Plan};
+use crate::framework::endpoint::serialize_query;
 use crate::framework::{
-    endpoint::{Endpoint, Method},
+    endpoint::{EndpointSpec, Method},
     response::ApiResult,
 };
 use crate::framework::{OrderDirection, SearchMatch};
 use chrono::offset::Utc;
 use chrono::DateTime;
+use serde::{Deserialize, Serialize};
 
 /// List Zones
 /// List, search, sort, and filter your zones
-/// https://api.cloudflare.com/#zone-list-zones
+/// <https://api.cloudflare.com/#zone-list-zones>
 #[derive(Debug)]
 pub struct ListZones {
     pub params: ListZonesParams,
 }
 
-impl Endpoint<Vec<Zone>, ListZonesParams> for ListZones {
+impl EndpointSpec<Vec<Zone>> for ListZones {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         "zones".to_string()
     }
-    fn query(&self) -> Option<ListZonesParams> {
-        Some(self.params.clone())
+    #[inline]
+    fn query(&self) -> Option<String> {
+        serialize_query(&self.params)
     }
 }
 
 /// Zone Details
-/// https://api.cloudflare.com/#zone-zone-details
+/// <https://api.cloudflare.com/#zone-zone-details>
 #[derive(Debug)]
 pub struct ZoneDetails<'a> {
     pub identifier: &'a str,
 }
-impl<'a> Endpoint<Zone> for ZoneDetails<'a> {
+impl<'a> EndpointSpec<Zone> for ZoneDetails<'a> {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         format!("zones/{}", self.identifier)
@@ -43,21 +46,23 @@ impl<'a> Endpoint<Zone> for ZoneDetails<'a> {
 }
 
 /// Add Zone
-/// https://api.cloudflare.com/#zone-create-zone
+/// <https://api.cloudflare.com/#zone-create-zone>
 pub struct CreateZone<'a> {
     pub params: CreateZoneParams<'a>,
 }
-impl<'a> Endpoint<(), (), CreateZoneParams<'a>> for CreateZone<'a> {
+impl<'a> EndpointSpec<()> for CreateZone<'a> {
     fn method(&self) -> Method {
-        Method::Post
+        Method::POST
     }
 
     fn path(&self) -> String {
         "zones".to_string()
     }
 
-    fn body(&self) -> Option<CreateZoneParams<'a>> {
-        Some(self.params.clone())
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.params).unwrap();
+        Some(body)
     }
 }
 
@@ -136,7 +141,7 @@ pub struct Meta {
 }
 
 /// A Zone is a domain name along with its subdomains and other identities
-/// https://api.cloudflare.com/#zone-properties
+/// <https://api.cloudflare.com/#zone-properties>
 #[derive(Deserialize, Debug)]
 pub struct Zone {
     /// Zone identifier tag

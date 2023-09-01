@@ -1,11 +1,12 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
 use crate::framework::response::ApiResult;
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Get User Details
 /// Gets information about a user
-/// https://api.cloudflare.com/#user-user-details
+/// <https://api.cloudflare.com/#user-user-details>
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct Organization {
@@ -67,9 +68,9 @@ fn handles_empty_betas_field() {
 #[derive(Debug)]
 pub struct GetUserDetails {}
 
-impl Endpoint<UserDetails, (), ()> for GetUserDetails {
+impl EndpointSpec<UserDetails> for GetUserDetails {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         "user".to_string()
@@ -78,7 +79,7 @@ impl Endpoint<UserDetails, (), ()> for GetUserDetails {
 
 /// Validate User Token
 /// Returns whether a given token is valid or not.
-/// https://blog.cloudflare.com/api-tokens-general-availability/
+/// <https://blog.cloudflare.com/api-tokens-general-availability/>
 ///
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct UserTokenStatus {
@@ -90,9 +91,9 @@ impl ApiResult for UserTokenStatus {}
 #[derive(Debug)]
 pub struct GetUserTokenStatus {}
 
-impl Endpoint<UserTokenStatus, (), ()> for GetUserTokenStatus {
+impl EndpointSpec<UserTokenStatus> for GetUserTokenStatus {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         "user/tokens/verify".to_string()

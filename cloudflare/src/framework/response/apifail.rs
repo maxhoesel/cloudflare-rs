@@ -1,14 +1,12 @@
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::value::Value as JValue;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt::{self, Debug, Write as _};
 
-use std::fmt;
-use std::fmt::Debug;
-use std::fmt::Write as _;
 /// Note that APIError's `eq` implementation only compares `code` and `message`.
 /// It does NOT compare the `other` values.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct ApiError {
     pub code: u16,
     pub message: String,
@@ -18,7 +16,7 @@ pub struct ApiError {
 
 /// Note that APIErrors's `eq` implementation only compares `code` and `message`.
 /// It does NOT compare the `other` values.
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct ApiErrors {
     #[serde(flatten)]
     pub other: HashMap<String, JValue>,
@@ -42,7 +40,7 @@ impl Eq for ApiErrors {}
 impl Error for ApiError {}
 
 impl fmt::Display for ApiError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Error {}: {}", self.code, self.message)
     }
 }
@@ -71,19 +69,19 @@ impl PartialEq for ApiFailure {
 impl Eq for ApiFailure {}
 
 impl fmt::Display for ApiFailure {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ApiFailure::Error(status, api_errors) => {
-                let mut output = format!("HTTP {}", status);
+                let mut output = format!("HTTP {status}");
                 for err in &api_errors.errors {
                     let _ = write!(output, "\n{}: {} ({:?})", err.code, err.message, err.other);
                 }
                 for (k, v) in &api_errors.other {
-                    let _ = write!(output, "\n{}: {}", k, v);
+                    let _ = write!(output, "\n{k}: {v}");
                 }
-                write!(f, "{}", output)
+                write!(f, "{output}")
             }
-            ApiFailure::Invalid(err) => write!(f, "{}", err),
+            ApiFailure::Invalid(err) => write!(f, "{err}"),
         }
     }
 }

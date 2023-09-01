@@ -1,23 +1,18 @@
-use clap::{App, AppSettings, Arg};
-use cloudflare::framework::{
-    async_api, async_api::ApiClient, auth::Credentials, Environment, HttpApiClientConfig,
-};
+#![forbid(unsafe_code)]
+
+use clap::{Arg, Command};
+use cloudflare::framework::async_api::Client as AsyncClient;
+use cloudflare::framework::{async_api, auth::Credentials, Environment, HttpApiClientConfig};
 use std::fmt::Display;
 use std::net::{IpAddr, Ipv4Addr};
 
-async fn tests<ApiClientType: ApiClient>(
-    api_client: &ApiClientType,
-    account_id: &str,
-) -> anyhow::Result<()> {
+async fn tests(api_client: &AsyncClient, account_id: &str) -> anyhow::Result<()> {
     test_lb_pool(api_client, account_id).await?;
     println!("Tests passed");
     Ok(())
 }
 
-async fn test_lb_pool<ApiClientType: ApiClient>(
-    api_client: &ApiClientType,
-    account_identifier: &str,
-) -> anyhow::Result<()> {
+async fn test_lb_pool(api_client: &AsyncClient, account_identifier: &str) -> anyhow::Result<()> {
     use cloudflare::endpoints::load_balancing::*;
 
     // Create a pool
@@ -51,7 +46,7 @@ async fn test_lb_pool<ApiClientType: ApiClient>(
             },
         })
         .await
-        .log_err(|e| println!("Error in CreatePool: {}", e))?
+        .log_err(|e| println!("Error in CreatePool: {e}"))?
         .result;
 
     // Get the details, but wait until after we delete the pool to validate it.
@@ -61,7 +56,7 @@ async fn test_lb_pool<ApiClientType: ApiClient>(
             identifier: &pool.id,
         })
         .await
-        .log_err(|e| println!("Error in PoolDetails: {}", e));
+        .log_err(|e| println!("Error in PoolDetails: {e}"));
 
     // Delete the pool
     let _ = api_client
@@ -70,7 +65,7 @@ async fn test_lb_pool<ApiClientType: ApiClient>(
             identifier: &pool.id,
         })
         .await
-        .log_err(|e| println!("Error in DeletePool: {}", e))?;
+        .log_err(|e| println!("Error in DeletePool: {e}"))?;
 
     // Validate the pool we got was the same as the pool we sent
     let pool_details = pool_details?.result;
@@ -82,51 +77,42 @@ async fn test_lb_pool<ApiClientType: ApiClient>(
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli =
-    App::new("Cloudflare-rs E2E tests")
+    Command::new("Cloudflare-rs E2E tests")
         .version("0.0")
         .author("Argo Tunnel team <argo-tunnel-team@cloudflare.com>")
         .about("Issues example requests to the Cloudflare API using the cloudflare-rust client library")
-        .arg(Arg::with_name("email")
+        .arg(Arg::new("email")
             .long("email")
             .help("Email address associated with your account")
-            .takes_value(true)
             .requires("auth-key"))
-        .arg(Arg::with_name("auth-key")
+        .arg(Arg::new("auth-key")
             .long("auth-key")
             .env("CF_RS_AUTH_KEY")
             .help("API key generated on the \"My Account\" page")
-            .takes_value(true)
             .requires("email"))
-        .arg(Arg::with_name("auth-token")
+        .arg(Arg::new("auth-token")
             .long("auth-token")
             .env("CF_RS_AUTH_TOKEN")
             .help("API token generated on the \"My Account\" page")
-            .takes_value(true)
-            .conflicts_with_all(&["email", "auth-key"]))
-        .arg(Arg::with_name("account-id")
+            .conflicts_with_all(["email", "auth-key"]))
+        .arg(Arg::new("account-id")
             .long("account-id")
             .env("CF_RS_ZONE_ID")
-            .help("The ID of the account tests should be run on")
-            .takes_value(true))
-        .setting(AppSettings::ArgRequiredElseHelp);
+            .help("The ID of the account tests should be run on"))
+        .arg_required_else_help(true);
 
-    let matches = cli.get_matches();
-    let email = matches.value_of("email");
-    let key = matches.value_of("auth-key");
-    let token = matches.value_of("auth-token");
+    let mut matches = cli.get_matches();
+    let email = matches.remove_one("email").unwrap();
+    let key = matches.remove_one("auth-key");
+    let token = matches.remove_one("auth-token");
     let account_id = matches
-        .value_of("account-id")
+        .remove_one("account-id")
         .expect("account_id is mandatory");
 
     let credentials: Credentials = if let Some(key) = key {
-        Credentials::UserAuthKey {
-            email: email.unwrap().to_string(),
-            key: key.to_string(),
-        }
+        Credentials::UserAuthKey { email, key }
     } else if let Some(token) = token {
-        Credentials::UserAuthToken {
-            token: token.to_string(),
-        }
+        Credentials::UserAuthToken { token }
     } else {
         panic!("Either API token or API key + email pair must be provided")
     };

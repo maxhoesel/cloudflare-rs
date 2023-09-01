@@ -1,9 +1,9 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
 
 use super::Tunnel;
 
 /// Delete a tunnel
-/// https://api.cloudflare.com/#argo-tunnel-delete-argo-tunnel
+/// <https://api.cloudflare.com/#argo-tunnel-delete-argo-tunnel>
 #[derive(Debug)]
 pub struct DeleteTunnel<'a> {
     pub account_identifier: &'a str,
@@ -12,9 +12,9 @@ pub struct DeleteTunnel<'a> {
     pub cascade: bool,
 }
 
-impl<'a> Endpoint<Tunnel> for DeleteTunnel<'a> {
+impl<'a> EndpointSpec<Tunnel> for DeleteTunnel<'a> {
     fn method(&self) -> Method {
-        Method::Delete
+        Method::DELETE
     }
     fn path(&self) -> String {
         format!(

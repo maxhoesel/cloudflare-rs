@@ -1,8 +1,10 @@
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
 use crate::framework::response::ApiResult;
 
+use serde::{Deserialize, Serialize};
+
 /// Delete Workers script
-/// https://api.cloudflare.com/#worker-script-delete-worker
+/// <https://api.cloudflare.com/#worker-script-delete-worker>
 #[derive(Debug)]
 pub struct DeleteScript<'a> {
     /// account id of owner of the script
@@ -11,9 +13,9 @@ pub struct DeleteScript<'a> {
     pub script_name: &'a str,
 }
 
-impl<'a> Endpoint<ScriptDeleteID, (), ()> for DeleteScript<'a> {
+impl<'a> EndpointSpec<ScriptDeleteID> for DeleteScript<'a> {
     fn method(&self) -> Method {
-        Method::Delete
+        Method::DELETE
     }
     fn path(&self) -> String {
         format!(

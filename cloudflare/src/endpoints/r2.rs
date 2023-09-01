@@ -1,9 +1,9 @@
 use chrono::offset::Utc;
 use chrono::DateTime;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
 use crate::framework::response::ApiResult;
 
 /// A Bucket is a collection of Objects stored in R2.
@@ -31,9 +31,9 @@ pub struct ListBuckets<'a> {
     pub account_identifier: &'a str,
 }
 
-impl<'a> Endpoint<ListBucketsResult> for ListBuckets<'a> {
+impl<'a> EndpointSpec<ListBucketsResult> for ListBuckets<'a> {
     fn method(&self) -> Method {
-        Method::Get
+        Method::GET
     }
     fn path(&self) -> String {
         format!("accounts/{}/r2/buckets", self.account_identifier)
@@ -49,9 +49,9 @@ pub struct CreateBucket<'a> {
     pub bucket_name: &'a str,
 }
 
-impl<'a> Endpoint<EmptyMap> for CreateBucket<'a> {
+impl<'a> EndpointSpec<EmptyMap> for CreateBucket<'a> {
     fn method(&self) -> Method {
-        Method::Put
+        Method::PUT
     }
     fn path(&self) -> String {
         format!(
@@ -68,9 +68,9 @@ pub struct DeleteBucket<'a> {
     pub bucket_name: &'a str,
 }
 
-impl<'a> Endpoint<EmptyMap> for DeleteBucket<'a> {
+impl<'a> EndpointSpec<EmptyMap> for DeleteBucket<'a> {
     fn method(&self) -> Method {
-        Method::Delete
+        Method::DELETE
     }
     fn path(&self) -> String {
         format!(

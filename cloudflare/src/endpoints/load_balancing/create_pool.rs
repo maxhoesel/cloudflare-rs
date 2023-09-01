@@ -1,8 +1,10 @@
 use crate::endpoints::load_balancing::{Origin, Pool};
-use crate::framework::endpoint::{Endpoint, Method};
+use crate::framework::endpoint::{EndpointSpec, Method};
+
+use serde::Serialize;
 
 /// Create Pool
-/// https://api.cloudflare.com/#account-load-balancer-pools-create-pool
+/// <https://api.cloudflare.com/#account-load-balancer-pools-create-pool>
 #[derive(Debug)]
 pub struct CreatePool<'a> {
     /// The Cloudflare account to create this Pool under.
@@ -49,14 +51,16 @@ pub struct OptionalParams<'a> {
     pub notification_email: Option<&'a str>,
 }
 
-impl<'a> Endpoint<Pool, (), Params<'a>> for CreatePool<'a> {
+impl<'a> EndpointSpec<Pool> for CreatePool<'a> {
     fn method(&self) -> Method {
-        Method::Post
+        Method::POST
     }
     fn path(&self) -> String {
         format!("accounts/{}/load_balancers/pools", self.account_identifier)
     }
-    fn body(&self) -> Option<Params<'a>> {
-        Some(self.params.clone())
+    #[inline]
+    fn body(&self) -> Option<String> {
+        let body = serde_json::to_string(&self.params).unwrap();
+        Some(body)
     }
 }
